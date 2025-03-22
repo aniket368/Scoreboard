@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leaderboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #0b132b;
+      color: #ffffff;
+      padding: 120px;
+    }
+    .container {
+      width: 1200px;
+      background: #1c2541;
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 255, 255, 0.3);
+      border: 3px solid #3a506b;
+      position: relative;
+      z-index: 1;
+    }
+    h1 {
+      text-align: center;
+      color: #5bc0be;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px #5bc0be;
+    }
+    .leaderboard {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+    }
+    .player-card {
+      background: #3a506b;
+      padding: 12px 20px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: transform 0.6s ease-in-out, background 0.3s ease, opacity 0.5s ease;
+    }
+    .player-card.green {
+      background: #28df99;
+      color: #003049;
+    }
+    .player-card.white {
+      background: #f8f8f2;
+      color: #003049;
+    }
+    .player-card.red {
+      background: #ef233c;
+      color: #ffffff;
+    }
+    .player-card.faded {
+      opacity: 0.4;
+      background: #444;
+    }
+    .player-profile {
+      display: flex;
+      align-items: center;
+    }
+    .profile-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 15px;
+      border: 2px solid #5bc0be;
+    }
+    .player-score {
+      width: 60px;
+      text-align: center;
+    }
+    .player-name {
+      font-weight: bold;
+      flex: 1;
+      display: inline;
+      align-items: center;
+      text-align: center;
+    }
+    .controls {
+      display: flex;
+      flex-direction: row;
+      gap: 15px;
+      margin-top: 20px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .player-controls {
+      background-color: #2b2d42;
+      padding: 12px;
+      border-radius: 10px;
+      border: 2px solid #5bc0be;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 0 auto;
+      transition: all 0.5s ease-in-out;
+    }
+    .player-controls.eliminated-controls {
+      opacity: 90%;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: opacity 0.6s ease, transform 0.6s;
+    }
+    .player-controls.hidden {
+      display: none;
+    }
+    .player-controls .player-name {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .score-buttons {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+    }
+    .btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      color: #003049;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.3s;
+    }
+    .btn:hover {
+      transform: scale(1.1);
+    }
+    /* Positive and Negative button colors */
+    .btn-positive {
+      background-color: #90ee90; /* Light green */
+    }
+    .btn-positive:hover {
+      background-color: #76c776;
+    }
+    .btn-negative {
+      background-color: #f08080; /* Light red */
+    }
+    .btn-negative:hover {
+      background-color: #e06666;
+    }
+    .eliminate-btn {
+      background-color: #ef233c;
+    }
+    .reset-btn {
+      background-color: #ef233c;
+      margin-top: 15px;
+      width: 100%;
+      text-align: center;
+    }
+    .preview-mode .controls,
+    .preview-mode .reset-btn {
+      display: none;
+    }
+    .preview-toggle-btn {
+      background-color: #5bc0be;
+      width: 100%;
+      margin-top: 15px;
+    }
+    .move-up {
+      animation: moveUp 0.5s ease-in-out forwards;
+    }
+    @keyframes moveUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0.5;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    /* Modal overlay styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(11, 19, 43, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      display: none;
+    }
+    .modal {
+      background: #1c2541;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .modal h2 {
+      text-align: center;
+      margin-bottom: 15px;
+      color: #5bc0be;
+    }
+    .modal label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    .modal input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .modal .btn-group {
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="mainContainer">
+    <h1>Leaderboard</h1>
+    <div class="leaderboard" id="playerList">
+      <!-- Dynamic player cards will appear here -->
+    </div>
+    <div class="controls" id="controlsSection">
+      <div class="player-controls" id="playerControls">
+        <!-- Dynamic controls will be inserted here -->
+      </div>
+      <div class="player-controls eliminated-controls hidden" id="eliminatedControls">
+        <div class="player-name">Eliminated Players</div>
+      </div>
+    </div>
+    <button class="btn reset-btn" onclick="resetAllScores()">🔄 Reset All Scores</button>
+    <button class="btn preview-toggle-btn" onclick="togglePreviewMode()">👁 Open Preview Mode</button>
+  </div>
+
+  <!-- Modal for editing player details -->
+  <div class="modal-overlay" id="editModalOverlay">
+    <div class="modal">
+      <h2>Edit Player</h2>
+      <label for="editName">Name:</label>
+      <input type="text" id="editName" />
+      <label for="editPhoto">Photo URL:</label>
+      <input type="text" id="editPhoto" />
+      <div class="btn-group">
+        <button class="btn" onclick="saveEdit()">Save</button>
+        <button class="btn eliminate-btn" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variable to store which player's being edited
+    let currentEditId = null;
+    
+    // Load players from localStorage or initialize with default data.
+    let players = loadPlayers();
+
+    // Update the leaderboard display and save changes.
+    function updateLeaderboard() {
+      const leaderboard = document.getElementById("playerList");
+      leaderboard.innerHTML = "";
+
+      // Sort players: active players first (by score), then eliminated players.
+      players.sort((a, b) => {
+        if (a.eliminated !== b.eliminated) {
+          return a.eliminated ? 1 : -1;
+        }
+        return b.score - a.score;
+      });
+
+      // Calculate highest and lowest scores among active players only.
+      const activePlayers = players.filter(player => !player.eliminated);
+      const lowestScore = activePlayers.length ? Math.min(...activePlayers.map(player => player.score)) : 0;
+      const highestScore = activePlayers.length ? Math.max(...activePlayers.map(player => player.score)) : 0;
+      const tiedLast = activePlayers.filter(player => player.score === lowestScore).length > 1;
+
+      players.forEach(player => {
+        const card = document.createElement("div");
+        card.className = "player-card";
+
+        // Only apply rank colors for active players.
+        if (player.eliminated) {
+          card.classList.add("faded");
+        } else {
+          if (player.score === highestScore) {
+            card.classList.add("green");
+          } else if (player.score === lowestScore && tiedLast) {
+            card.classList.add("white");
+          } else if (player.score === lowestScore && !tiedLast) {
+            card.classList.add("red");
+          }
+        }
+
+        card.classList.add("move-up");
+
+        card.innerHTML = `
+          <div class="player-profile">
+            <img class="profile-img" src="${player.profileImg}" alt="${player.name}">
+            <div class="player-name">${player.name}</div>
+          </div>
+          <div class="player-score">${player.score}</div>
+        `;
+        leaderboard.appendChild(card);
+      });
+
+      // Save only the data (players array) to localStorage.
+      savePlayers();
+    }
+
+    // Generate the control buttons for each active player.
+    function generateControls() {
+      const controlsSection = document.getElementById("playerControls");
+      controlsSection.innerHTML = "";
+
+      players.forEach(player => {
+        if (!player.eliminated) {
+          const controlDiv = document.createElement("div");
+          controlDiv.className = "player-controls";
+
+          controlDiv.innerHTML = `
+            <div class="player-name">${player.name}</div>
+            <div class="score-buttons">
+              <button class="btn btn-positive" onclick="adjustScore(${player.id}, 1)">+1</button>
+              <button class="btn btn-negative" onclick="adjustScore(${player.id}, -1)">-1</button>
+              <button class="btn btn-positive" onclick="adjustScore(${player.id}, 4)">+4</button>
+              <button class="btn btn-negative" onclick="adjustScore(${player.id}, -4)">-4</button>
+              <button class="btn btn-positive" onclick="adjustScore(${player.id}, 6)">+6</button>
+              <button class="btn btn-negative" onclick="adjustScore(${player.id}, -6)">-6</button>
+              <button class="btn eliminate-btn" onclick="eliminatePlayer(${player.id})">Eliminate</button>
+              <button class="btn" onclick="openEditModal(${player.id})">Edit</button>
+            </div>
+          `;
+          controlsSection.appendChild(controlDiv);
+        }
+      });
+    }
+
+    // Adjust a player's score by a given number of points.
+    function adjustScore(id, points) {
+      const player = players.find(p => p.id === id);
+      if (player && !player.eliminated) {
+        player.score += points;
+        updateLeaderboard();
+        generateControls();
+      }
+    }
+
+    // Eliminate a player and move them to the eliminated section.
+    function eliminatePlayer(id) {
+      const player = players.find(p => p.id === id);
+      if (player) {
+        player.eliminated = true;
+        updateLeaderboard();
+        moveToEliminatedControls(player);
+        generateControls();
+      }
+    }
+
+    // Move the eliminated player to a separate controls section.
+    function moveToEliminatedControls(player) {
+      const eliminatedSection = document.getElementById("eliminatedControls");
+      eliminatedSection.classList.remove("hidden");
+
+      const controlDiv = document.createElement("div");
+      controlDiv.className = "player-controls eliminated-controls";
+
+      controlDiv.innerHTML = `
+        <div class="player-name">${player.name}</div>
+        <button class="btn eliminate-btn" onclick="resetPlayer(${player.id})">🔄 Reinstate Player</button>
+      `;
+      eliminatedSection.appendChild(controlDiv);
+    }
+
+    // Reinstate an eliminated player.
+    function resetPlayer(id) {
+      const player = players.find(p => p.id === id);
+      if (player) {
+        player.eliminated = false;
+        updateLeaderboard();
+        generateControls();
+
+        const eliminatedSection = document.getElementById("eliminatedControls");
+        const controls = Array.from(eliminatedSection.querySelectorAll(".player-controls"));
+        controls.forEach(control => {
+          if (control.innerText.includes(player.name)) {
+            eliminatedSection.removeChild(control);
+          }
+        });
+        if (eliminatedSection.children.length === 1) {
+          eliminatedSection.classList.add("hidden");
+        }
+      }
+    }
+
+    // Open the modal to edit a player's name and profile image.
+    function openEditModal(id) {
+      currentEditId = id;
+      const player = players.find(p => p.id === id);
+      if (player) {
+        document.getElementById("editName").value = player.name;
+        document.getElementById("editPhoto").value = player.profileImg;
+        document.getElementById("editModalOverlay").style.display = "flex";
+      }
+    }
+
+    // Save the changes from the modal.
+    function saveEdit() {
+      const player = players.find(p => p.id === currentEditId);
+      if (player) {
+        const newName = document.getElementById("editName").value.trim();
+        const newPhoto = document.getElementById("editPhoto").value.trim();
+        if (newName !== "") {
+          player.name = newName;
+        }
+        if (newPhoto !== "") {
+          player.profileImg = newPhoto;
+        }
+        updateLeaderboard();
+        generateControls();
+      }
+      closeModal();
+    }
+
+    // Close the modal.
+    function closeModal() {
+      document.getElementById("editModalOverlay").style.display = "none";
+      currentEditId = null;
+    }
+
+    // Reset all players’ scores and elimination status.
+    function resetAllScores() {
+      players.forEach(player => {
+        player.score = 0;
+        player.eliminated = false;
+      });
+      updateLeaderboard();
+      generateControls();
+      document.getElementById("eliminatedControls").classList.add("hidden");
+    }
+
+    // Toggle preview mode (hides controls and reset button).
+    function togglePreviewMode() {
+      const container = document.getElementById("mainContainer");
+      const previewButton = document.querySelector(".preview-toggle-btn");
+
+      container.classList.toggle("preview-mode");
+
+      if (container.classList.contains("preview-mode")) {
+        previewButton.innerText = "👁 Close Preview Mode";
+      } else {
+        previewButton.innerText = "👁 Open Preview Mode";
+      }
+    }
+
+    // Save only the players data (not CSS positions) to localStorage.
+    function savePlayers() {
+      localStorage.setItem("players", JSON.stringify(players));
+    }
+
+    // Load players data from localStorage, or initialize with default values.
+    function loadPlayers() {
+      const storedPlayers = localStorage.getItem("players");
+      if (storedPlayers) {
+        return JSON.parse(storedPlayers);
+      } else {
+        return [
+          { id: 1, name: "Aniket Das", score: 12, eliminated: false, profileImg: "https://via.placeholder.com/40" },
+          { id: 2, name: "Archana Das", score: 24, eliminated: false, profileImg: "https://via.placeholder.com/40" },
+          { id: 3, name: "Animesh Das", score: 18, eliminated: false, profileImg: "https://via.placeholder.com/40" },
+          { id: 4, name: "Antu", score: 6, eliminated: false, profileImg: "https://via.placeholder.com/40" },
+          { id: 5, name: "Anik", score: 15, eliminated: false, profileImg: "https://via.placeholder.com/40" },
+          { id: 6, name: "avsk", score: 10, eliminated: false, profileImg: "https://via.placeholder.com/40" }
+        ];
+      }
+    }
+
+    // Initialize the leaderboard and controls.
+    updateLeaderboard();
+    generateControls();
+  </script>
+</body>
+</html>

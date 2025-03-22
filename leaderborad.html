@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leaderboard</title>
+  <!-- Preload local font files -->
+  <link rel="preload" href="SupremeSpike.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="SpaceNova.otf" as="font" type="font/otf" crossorigin>
+  <!-- Load Orbitron and Space Nova fonts from Google Fonts (for score and fallback) -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&family=Space+Nova&display=swap" rel="stylesheet">
+  <style>
+    /* Define local fonts */
+    @font-face {
+      font-family: 'Supreme Spike';
+      src: url('SupremeSpike.otf') format('opentype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Space Nova';
+      src: url('SpaceNova.otf') format('opentype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      /* Set background image from the same folder */
+      background: url('bgscreen.gif') no-repeat center center;
+      background-size: cover;
+      color: #ffffff;
+      padding-top: 5px;
+      padding-bottom: 20px;
+    }
+    .container {
+      width: 1200px;
+      background: #1c2541;
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 255, 255, 0.3);
+      border: 3px solid #3a506b;
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+    }
+    /* Container light reflect animation */
+    .container::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 200%;
+      height: 100%;
+      background: linear-gradient(120deg, rgba(255,255,255,0) 25%, rgba(255,255,255,0.05) 65%, rgba(255,255,255,0) 25%);
+      pointer-events: none;
+      z-index: 2;
+      animation: containerReflect 15s infinite;
+    }
+    @keyframes containerReflect {
+      0% { transform: translateX(-100%); }
+      50% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+    h1 {
+      text-align: center;
+      color: #5bc0be;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px #5bc0be;
+    }
+    .leaderboard {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+    }
+    .player-card {
+      background: #3a506b;
+      padding: 12px 20px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: transform 0.6s ease-in-out, background 0.3s ease, opacity 0.5s ease;
+    }
+    .player-card.green {
+      background: #28df99;
+      color: #003049;
+    }
+    .player-card.white {
+      background: #f8f8f2;
+      color: #003049;
+    }
+    .player-card.red {
+      background: #ef233c;
+      color: #ffffff;
+    }
+    .player-card.faded {
+      opacity: 0.4;
+      background: #444;
+    }
+    .player-profile {
+      display: flex;
+      align-items: center;
+    }
+    .profile-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 15px;
+      border: 2px solid #5bc0be;
+      transition: all 0.3s ease;
+    }
+    .player-score {
+      width: 60px;
+      text-align: center;
+    }
+    .player-name {
+      font-weight: bold;
+      flex: 1;
+      display: inline;
+      align-items: center;
+      text-align: center;
+    }
+    .controls {
+      display: flex;
+      flex-direction: row;
+      gap: 15px;
+      margin-top: 20px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .player-controls {
+      background-color: #2b2d42;
+      padding: 12px;
+      border-radius: 10px;
+      border: 2px solid #5bc0be;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: auto;
+      max-width: auto;
+      margin: 0 auto;
+      transition: all 0.5s ease-in-out;
+    }
+    .player-controls.eliminated-controls {
+      opacity: 90%;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: auto;
+      margin: 0 auto;
+      transition: opacity 0.6s ease, transform 0.6s;
+    }
+    .player-controls.hidden {
+      display: none;
+    }
+    .player-controls .player-name {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .score-buttons {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+    }
+    .btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      color: #003049;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.3s;
+    }
+    .btn:hover {
+      transform: scale(1.1);
+    }
+    /* Positive and Negative button colors */
+    .btn-positive {
+      background-color: #90ee90;
+    }
+    .btn-positive:hover {
+      background-color: #76c776;
+    }
+    .btn-negative {
+      background-color: #f08080;
+    }
+    .btn-negative:hover {
+      background-color: #e06666;
+    }
+    .eliminate-btn {
+      background-color: #ef233c;
+    }
+    .reset-btn {
+      background-color: #ef233c;
+      margin-top: 15px;
+      width: 100%;
+      text-align: center;
+    }
+    .preview-mode .controls,
+    .preview-mode .reset-btn {
+      display: none;
+    }
+    .preview-toggle-btn {
+      background-color: #5bc0be;
+      width: 100%;
+      margin-top: 15px;
+    }
+    .move-up {
+      animation: moveUp 0.5s ease-in-out forwards;
+    }
+    @keyframes moveUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0.5;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    /* Modal overlay styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(11, 19, 43, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      display: none;
+    }
+    .modal {
+      background: #1c2541;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .modal h2 {
+      text-align: center;
+      margin-bottom: 15px;
+      color: #5bc0be;
+    }
+    .modal label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    .modal input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .modal .btn-group {
+      display: flex;
+      justify-content: space-between;
+    }
+    /* Preview Mode Styling */
+    .preview-mode .profile-img {
+      width: 80px;
+      height: 80px;
+    }
+    .preview-mode .player-name {
+      /* Use Supreme Spike for player names in preview mode */
+      font-family: 'Supreme Spike', sans-serif;
+      font-size: 24px;
+      font-weight: normal;
+    }
+    .preview-mode .player-score {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 28px;
+      font-weight: normal;
+    }
+    .preview-mode h1 {
+      /* Use Supreme Spike for the leaderboard title in preview mode */
+      font-family: 'Supreme Spike', sans-serif;
+      font-size: 36px;
+      font-weight: normal;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="mainContainer">
+    <h1>Leaderboard</h1>
+    <div class="leaderboard" id="playerList">
+      <!-- Sorted leaderboard cards will appear here -->
+    </div>
+    <div class="controls" id="controlsSection">
+      <!-- The fixed action controls (unsorted) -->
+      <div class="player-controls" id="playerControls">
+        <!-- Dynamic controls will be inserted here in fixed order -->
+      </div>
+      <div class="player-controls eliminated-controls hidden" id="eliminatedControls">
+        <div class="player-name">Eliminated Players</div>
+      </div>
+    </div>
+    <button class="btn reset-btn" onclick="resetAllScores()">🔄 Reset All Scores</button>
+    <button class="btn preview-toggle-btn" onclick="togglePreviewMode()">👁 Open Preview Mode</button>
+  </div>
+
+  <!-- Modal for editing player details -->
+  <div class="modal-overlay" id="editModalOverlay">
+    <div class="modal">
+      <h2>Edit Player</h2>
+      <label for="editName">Name:</label>
+      <input type="text" id="editName" />
+      <label for="editPhoto">Photo URL:</label>
+      <input type="text" id="editPhoto" />
+      <div class="btn-group">
+        <button class="btn" onclick="saveEdit()">Save</button>
+        <button class="btn eliminate-btn" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variable to store which player's being edited
+    let currentEditId = null;
+    
+    // Load players from localStorage or initialize with default data.
+    let players = loadPlayers();
+
+    // Update the leaderboard display using a sorted copy without modifying the original order.
+    function updateLeaderboard() {
+      const leaderboard = document.getElementById("playerList");
+      leaderboard.innerHTML = "";
+      
+      // Create a sorted copy of players for display (sort by eliminated status & score)
+      const sortedPlayers = players.slice().sort((a, b) => {
+        if (a.eliminated !== b.eliminated) {
+          return a.eliminated ? 1 : -1;
+        }
+        return b.score - a.score;
+      });
+
+      sortedPlayers.forEach(player => {
+        const card = document.createElement("div");
+        card.className = "player-card";
+
+        // Apply rank colors only for active players.
+        if (player.eliminated) {
+          card.classList.add("faded");
+        } else {
+          if (player.score === Math.max(...sortedPlayers.filter(p => !p.eliminated).map(p => p.score))) {
+            card.classList.add("green");
+          } else if (player.score === Math.min(...sortedPlayers.filter(p => !p.eliminated).map(p => p.score)) &&
+                     sortedPlayers.filter(p => !p.eliminated && p.score === player.score).length > 1) {
+            card.classList.add("white");
+          } else if (player.score === Math.min(...sortedPlayers.filter(p => !p.eliminated).map(p => p.score)) &&
+                     sortedPlayers.filter(p => !p.eliminated && p.score === player.score).length === 1) {
+            card.classList.add("red");
+          }
+        }
+
+        card.classList.add("move-up");
+
+        card.innerHTML = `
+          <div class="player-profile">
+            <img class="profile-img" src="${player.profileImg}" alt="${player.name}">
+            <div class="player-name">${player.name}</div>
+          </div>
+          <div class="player-score">${player.score}</div>
+        `;
+        leaderboard.appendChild(card);
+      });
+      
+      // Save only the players data to localStorage.
+      savePlayers();
+    }
+
+    // Generate the control buttons in fixed order (using the unsorted players array).
+    function generateControls() {
+      const controlsSection = document.getElementById("playerControls");
+      controlsSection.innerHTML = "";
+
+      // Iterate in the original order (do not sort)
+      players.forEach(player => {
+        if (!player.eliminated) {
+          const controlDiv = document.createElement("div");
+          controlDiv.className = "player-controls";
+
+          controlDiv.innerHTML = `
+            <div class="player-name">${player.name}</div>
+            <div class="score-buttons">
+              <button class="btn btn-positive" onclick="adjustScore(${player.id}, 1)">+1</button>
+              <button class="btn btn-negative" onclick="adjustScore(${player.id}, -1)">-1</button>
+              <button class="btn btn-positive" onclick="adjustScore(${player.id}, 4)">+4</button>
+              <button class="btn btn-negative" onclick="adjustScore(${player.id}, -4)">-4</button>
+              <button class="btn btn-positive" onclick="adjustScore(${player.id}, 6)">+6</button>
+              <button class="btn btn-negative" onclick="adjustScore(${player.id}, -6)">-6</button>
+              <button class="btn eliminate-btn" onclick="eliminatePlayer(${player.id})">Eliminate</button>
+              <button class="btn" onclick="openEditModal(${player.id})">Edit</button>
+            </div>
+          `;
+          controlsSection.appendChild(controlDiv);
+        }
+      });
+    }
+
+    // Generate the eliminated players controls (using the original order).
+    function generateEliminatedControls() {
+      const eliminatedSection = document.getElementById("eliminatedControls");
+      eliminatedSection.innerHTML = '<div class="player-name">Eliminated Players</div>';
+      const eliminatedPlayers = players.filter(player => player.eliminated);
+      if (eliminatedPlayers.length > 0) {
+        eliminatedSection.classList.remove("hidden");
+        eliminatedPlayers.forEach(player => {
+          const controlDiv = document.createElement("div");
+          controlDiv.className = "player-controls eliminated-controls";
+          controlDiv.innerHTML = `
+            <div class="player-name">${player.name}</div>
+            <button class="btn eliminate-btn" onclick="resetPlayer(${player.id})">🔄 Reinstate Player</button>
+          `;
+          eliminatedSection.appendChild(controlDiv);
+        });
+      } else {
+        eliminatedSection.classList.add("hidden");
+      }
+    }
+
+    // Adjust a player's score.
+    function adjustScore(id, points) {
+      const player = players.find(p => p.id === id);
+      if (player && !player.eliminated) {
+        player.score += points;
+        updateLeaderboard();
+        generateControls();
+        generateEliminatedControls();
+      }
+    }
+
+    // Eliminate a player.
+    function eliminatePlayer(id) {
+      const player = players.find(p => p.id === id);
+      if (player) {
+        player.eliminated = true;
+        updateLeaderboard();
+        generateControls();
+        generateEliminatedControls();
+      }
+    }
+
+    // Reinstate an eliminated player.
+    function resetPlayer(id) {
+      const player = players.find(p => p.id === id);
+      if (player) {
+        player.eliminated = false;
+        updateLeaderboard();
+        generateControls();
+        generateEliminatedControls();
+      }
+    }
+
+    // Open the modal to edit a player's details.
+    function openEditModal(id) {
+      currentEditId = id;
+      const player = players.find(p => p.id === id);
+      if (player) {
+        document.getElementById("editName").value = player.name;
+        document.getElementById("editPhoto").value = player.profileImg;
+        document.getElementById("editModalOverlay").style.display = "flex";
+      }
+    }
+
+    // Save the changes from the modal.
+    function saveEdit() {
+      const player = players.find(p => p.id === currentEditId);
+      if (player) {
+        const newName = document.getElementById("editName").value.trim();
+        const newPhoto = document.getElementById("editPhoto").value.trim();
+        if (newName !== "") {
+          player.name = newName;
+        }
+        if (newPhoto !== "") {
+          player.profileImg = newPhoto;
+        }
+        updateLeaderboard();
+        generateControls();
+        generateEliminatedControls();
+      }
+      closeModal();
+    }
+
+    // Close the edit modal.
+    function closeModal() {
+      document.getElementById("editModalOverlay").style.display = "none";
+      currentEditId = null;
+    }
+
+    // Reset all players’ scores and elimination status.
+    function resetAllScores() {
+      players.forEach(player => {
+        player.score = 0;
+        player.eliminated = false;
+      });
+      updateLeaderboard();
+      generateControls();
+      generateEliminatedControls();
+    }
+
+    // Toggle preview mode (hides controls and reset button) and applies preview styling.
+    function togglePreviewMode() {
+      const container = document.getElementById("mainContainer");
+      const previewButton = document.querySelector(".preview-toggle-btn");
+      container.classList.toggle("preview-mode");
+      if (container.classList.contains("preview-mode")) {
+        previewButton.innerText = "👁 Close Preview Mode";
+      } else {
+        previewButton.innerText = "👁 Open Preview Mode";
+      }
+    }
+
+    // Save players data (only the data) to localStorage.
+    function savePlayers() {
+      localStorage.setItem("players", JSON.stringify(players));
+    }
+
+    // Load players data from localStorage, or initialize with default values.
+    function loadPlayers() {
+      const storedPlayers = localStorage.getItem("players");
+      if (storedPlayers) {
+        return JSON.parse(storedPlayers);
+      } else {
+        return [
+          { id: 1, name: "Aniket Das", score: 12, eliminated: false, profileImg: "https://via.placeholder.com/40" },
+          { id: 2, name: "Archana Das", score: 24, eliminated: false, profileImg: "https://via.placeholder.com/40" },
+          { id: 3, name: "Animesh Das", score: 18, eliminated: false, profileImg: "https://via.placeholder.com/40" },
+          { id: 4, name: "Antu", score: 6, eliminated: false, profileImg: "https://via.placeholder.com/40" },
+          { id: 5, name: "Anik", score: 15, eliminated: false, profileImg: "https://via.placeholder.com/40" },
+          { id: 6, name: "avsk", score: 10, eliminated: false, profileImg: "https://via.placeholder.com/40" }
+        ];
+      }
+    }
+
+    // Initialize the display.
+    updateLeaderboard();
+    generateControls();
+    generateEliminatedControls();
+  </script>
+</body>
+</html>
